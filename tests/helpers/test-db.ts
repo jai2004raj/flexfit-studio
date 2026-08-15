@@ -1,12 +1,9 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "@/db/schema";
-import { randomUUID } from "node:crypto";
-import { unlinkSync, existsSync } from "node:fs";
 
 export async function createTestDatabase() {
-  const dbFile = `test-${randomUUID()}.db`;
-  const client = createClient({ url: `file:${dbFile}` });
+  const client = createClient({ url: ":memory:" });
   const db = drizzle(client, { schema });
 
   const statements = [
@@ -145,9 +142,6 @@ export async function createTestDatabase() {
   const cleanup = () => {
     try {
       client.close();
-      if (existsSync(dbFile)) {
-        unlinkSync(dbFile);
-      }
     } catch {
       // ignore cleanup errors
     }
