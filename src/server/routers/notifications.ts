@@ -1,76 +1,40 @@
-import { z } from "zod";
-import { and, eq, desc, not, sql } from "drizzle-orm";
-import { notifications, users } from "@/db/schema";
-import { router, protectedProcedure, adminProcedure } from "../trpc";
+import {
+  router,
+  protectedProcedure,
+  adminProcedure,
+} from "../trpc";
+import { NotificationService } from "../services/notification.service";
+import {
+  listNotificationsSchema,
+  broadcastNotificationSchema,
+} from "@/shared/schemas/notification.schema";
 
 export const notificationsRouter = router({
   unreadCount: protectedProcedure.query(async ({ ctx }) => {
-    const [{ count }] = await ctx.db
-      .select({
-        count: sql<number>`count(*)`,
-      })
-      .from(notifications)
-      .where(
-        and(
-          eq(notifications.userId, ctx.user.id),
-          not(notifications.read)
-        )
-      );
-
-    return Number(count) || 0;
+    return NotificationService.getUnreadCount(ctx.db, ctx.user.id);
   }),
 
   list: protectedProcedure
-    .input(z.object({ limit: z.number().default(50) }).default({}))
+    .input(listNotificationsSchema)
     .query(async ({ ctx, input }) => {
-      return ctx.db
-        .select()
-        .from(notifications)
-        .where(eq(notifications.userId, ctx.user.id))
-        .orderBy(desc(notifications.createdAt))
-        .limit(input.limit);
+      return NotificationService.listNotifications(
+        ctx.db,
+        ctx.user.id,
+        input.limit,
+      );
     }),
 
   markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
-    await ctx.db
-      .update(notifications)
-      .set({ read: true })
-      .where(
-        and(
-          eq(notifications.userId, ctx.user.id),
-          not(notifications.read)
-        )
-      );
-
-    return { ok: true };
+    return NotificationService.markAllAsRead(ctx.db, ctx.user.id);
   }),
 
   broadcast: adminProcedure
-    .input(
-      z.object({
-        title: z.string(),
-        message: z.string(),
-      })
-    )
+    .input(broadcastNotificationSchema)
     .mutation(async ({ ctx, input }) => {
-      const activeMembers = await ctx.db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.role, "member"));
-
-      if (activeMembers.length === 0) {
-        return { ok: true, count: 0 };
-      }
-
-      await ctx.db.insert(notifications).values(
-        activeMembers.map((member) => ({
-          userId: member.id,
-          type: "announcement" as const,
-          title: input.title,
-          message: input.message,
-        }))
+      return NotificationService.broadcastAnnouncement(
+        ctx.db,
+        input.title,
+        input.message,
       );
-
-      return { ok: true, count: activeMembers.length };
     }),
 });

@@ -1,11 +1,12 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { cookies } from "next/headers";
-import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { sessions, users, type User } from "@/db/schema";
+import type { User } from "@/db/schema";
+import { SESSION_COOKIE } from "@/config/constants";
+import { AuthService } from "./services/auth.service";
 
-export const SESSION_COOKIE = "flexfit_session";
+export { SESSION_COOKIE };
 
 export async function createContext() {
   const store = await cookies();
@@ -14,16 +15,7 @@ export async function createContext() {
   let user: User | null = null;
 
   if (token) {
-    const row = await db
-      .select({ session: sessions, user: users })
-      .from(sessions)
-      .innerJoin(users, eq(sessions.userId, users.id))
-      .where(eq(sessions.token, token))
-      .get();
-
-    if (row && new Date(row.session.expiresAt) > new Date()) {
-      user = row.user;
-    }
+    user = await AuthService.getUserFromToken(db, token);
   }
 
   return { db, user, token };

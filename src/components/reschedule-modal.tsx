@@ -26,19 +26,27 @@ export function RescheduleModal({
 
   const utils = trpc.useUtils();
 
-  // Get available classes with the same name
-  const { data: availableClasses } = trpc.classes.list.useQuery(
-    {
-      from: new Date().toISOString(),
-    },
-    {
-      enabled: isOpen,
-    }
+  // Get user's existing active bookings to prevent selecting a slot they already hold
+  const { data: myBookings } = trpc.bookings.mine.useQuery(
+    { includePast: false },
+    { enabled: isOpen },
   );
 
-  // Filter to only same-name classes (excluding the original)
+  const [fromDate] = useState(() => new Date().toISOString().slice(0, 10));
+
+  // Get available classes with the same name
+  const { data: availableClasses, isLoading } = trpc.classes.list.useQuery(
+    {
+      from: fromDate,
+    },
+    {
+      enabled: isOpen && !!fromClassName,
+    },
+  );
+
+  // Filter to only same-name classes excluding the current session
   const sameNameClasses = (availableClasses || []).filter(
-    (cls) => cls.name === fromClassName
+    (cls) => cls.name === fromClassName && cls.startsAt !== fromClassTime,
   );
 
   const reschedule = trpc.reschedules.reschedule.useMutation({
@@ -48,6 +56,7 @@ export function RescheduleModal({
       await utils.reschedules.history.invalidate();
       await utils.classes.list.invalidate();
       setSelectedClassId(null);
+      setError(null);
       onClose();
       onSuccess();
     },
@@ -90,36 +99,65 @@ export function RescheduleModal({
         )}
 
         <div className="space-y-2 max-h-64 overflow-y-auto">
-          {sameNameClasses.length ? (
-            sameNameClasses.map((cls) => (
-              <button
-                key={cls.id}
-                className={`panel w-full p-3 text-left`}
-                onClick={() => setSelectedClassId(cls.id)}
-                style={{
-                  border:
-                    selectedClassId === cls.id
-                      ? "2px solid #3b82f6"
-                      : "1px solid transparent",
-                }}
-                disabled={reschedule.isPending}
-              >
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-sm">{cls.name}</h3>
-                  {(cls.full || (cls.spotsLeft ?? 0) === 0) && (
-                    <span
-                      className="rounded px-1.5 py-0.5 text-xs"
-                      style={{ background: "#3a2a1a", color: "#fbbf24" }}
-                    >
-                      Waitlist
-                    </span>
-                  )}
-                </div>
-                <p className="muted text-xs mt-1">
-                  {formatDateTime(cls.startsAt)} • {cls.room}
-                </p>
-              </button>
-            ))
+          {isLoading ? (
+            <p className="muted text-sm text-center py-4">
+              Loading available classes...
+            </p>
+          ) : sameNameClasses.length > 0 ? (
+            sameNameClasses.map((cls) => {
+              const isAlreadyBooked = (myBookings || []).some(
+                (b) =>
+                  b.classId === cls.id &&
+                  (b.status === "booked" || b.status === "waitlisted"),
+              );
+
+              return (
+                <button
+                  key={cls.id}
+                  type="button"
+                  className={`panel w-full p-3 text-left transition ${
+                    isAlreadyBooked ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                  onClick={() => {
+                    if (!isAlreadyBooked) {
+                      setSelectedClassId(cls.id);
+                      setError(null);
+                    }
+                  }}
+                  style={{
+                    border:
+                      selectedClassId === cls.id
+                        ? "2px solid #3b82f6"
+                        : "1px solid var(--border)",
+                  }}
+                  disabled={isAlreadyBooked || reschedule.isPending}
+                >
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium text-sm">{cls.name}</h3>
+                    {isAlreadyBooked ? (
+                      <span
+                        className="rounded px-1.5 py-0.5 text-xs muted"
+                        style={{ background: "var(--bg-secondary)" }}
+                      >
+                        Already booked
+                      </span>
+                    ) : (
+                      (cls.full || (cls.spotsLeft ?? 0) === 0) && (
+                        <span
+                          className="rounded px-1.5 py-0.5 text-xs"
+                          style={{ background: "#3a2a1a", color: "#fbbf24" }}
+                        >
+                          Waitlist
+                        </span>
+                      )
+                    )}
+                  </div>
+                  <p className="muted text-xs mt-1">
+                    {formatDateTime(cls.startsAt)} • {cls.room}
+                  </p>
+                </button>
+              );
+            })
           ) : (
             <p className="muted text-sm text-center py-4">
               No other {fromClassName} classes available
@@ -129,17 +167,20 @@ export function RescheduleModal({
 
         <div className="flex gap-2 justify-end">
           <button
+            type="button"
             className="btn"
             disabled={reschedule.isPending}
-            onClick={onClose}
+            onClick={() => {
+              setError(null);
+              onClose();
+            }}
           >
             Cancel
           </button>
           <button
+            type="button"
             className="btn btn-primary"
-            disabled={
-              !selectedClassId || reschedule.isPending
-            }
+            disabled={!selectedClassId || reschedule.isPending}
             onClick={() => {
               if (selectedClassId) {
                 reschedule.mutate({

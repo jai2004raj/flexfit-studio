@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/format";
+import type { MemberSearchResult } from "@/shared/types/member.types";
 
 export default function KioskPage() {
   const { data: user } = trpc.auth.me.useQuery();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [selectedMember, setSelectedMember] = useState<MemberSearchResult | null>(null);
   const [checkinSuccess, setCheckinSuccess] = useState<{ memberName: string; className: string } | null>(null);
 
   const lookupMember = trpc.members.lookupByEmailOrPhone.useQuery(
