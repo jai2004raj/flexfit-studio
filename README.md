@@ -1,13 +1,10 @@
 💪 FlexFit Studio
 
 A full-stack gym management and class booking platform designed for a single fitness studio. FlexFit Studio enables members to manage
-
 memberships, book fitness classes, use class credits, and join waitlists, while staff can operate the front desk, manage trainers, 
-
 monitor memberships, and access operational reports.
 
 The platform also supports corporate credit pools, allowing companies to purchase credits that their employees can use when booking gym 
-
 classes.
 
 -> 📋 Table of Contents
@@ -51,17 +48,12 @@ classes.
 -> 🎯 Overview
 
 FlexFit Studio is a gym and fitness studio management application that brings member management, class scheduling, memberships,
-
 credits, trainers, bookings, waitlists, and reporting into a single platform.
-
 The system is designed around three primary user groups:
 
 Members – book classes, manage memberships, use credits, and join waitlists.
-
 Staff/Admins – manage the gym's daily operations, members, trainers, classes, and reports.
-
 Corporate Clients – purchase credit pools that employees can use to access gym classes.
-
 The application uses a local SQLite database, making it simple to set up and run without requiring a separate database server.
 
 -> ✨ Key Features
@@ -127,8 +119,11 @@ When a class reaches its maximum capacity, members can join a waitlist.
 The system can track:
 
 1. Class capacity
+
 2. Current bookings
+
 3. Waitlisted members
+
 4. Booking availability
 
 f) 🧑‍🏫 Trainer Management
@@ -137,13 +132,13 @@ Staff can manage trainers and their class assignments.
 
 Trainer-related functionality includes:
 
-1. Trainer profiles
+1.Trainer profiles
 
-2. Trainer assignment
+2.Trainer assignment
 
 3.Class schedules
 
-4. Trainer-specific class information
+4.Trainer-specific class information
 
 
 g) 🏢 Corporate Credit Pools
@@ -152,9 +147,9 @@ Companies can purchase pools of class credits for their employees.
 
 This allows organizations to:
 
-1. Allocate fitness benefits to employees
+1.Allocate fitness benefits to employees
 
-2. Purchase credits in bulk
+2.Purchase credits in bulk
 
 3.Allow employees to book classes using company credits
 
@@ -226,45 +221,7 @@ The repository includes Drizzle configuration, a SQLite database setup, TypeScri
 
 configuration.
 
-📁 Project Structure
-
-flexfit-studio/
-│
-├── documents/
-│
-├── src/
-│   ├── app/
-│   │   └── routes and pages
-│   │
-│   ├── components/
-│   │   └── shared UI components
-│   │
-│   ├── db/
-│   │   ├── schema.ts
-│   │   ├── client.ts
-│   │   └── seed.ts
-│   │
-│   ├── lib/
-│   │   └── utility functions and helpers
-│   │
-│   └── server/
-│       └── tRPC routers
-│
-├── tests/
-│
-├── .gitignore
-├── drizzle.config.ts
-├── next.config.mjs
-├── package.json
-├── pnpm-lock.yaml
-├── pnpm-workspace.yaml
-├── postcss.config.mjs
-├── tailwind.config.ts
-├── tsconfig.json
-└── vitest.config.ts
-
 The repository currently follows a separation between application routes, reusable components, database functionality, utility 
-
 libraries, server-side routers, and tests.
 
 📦 Prerequisites
@@ -358,63 +315,6 @@ pnpm db:reset	Delete, recreate, and reseed the database
 npx tsc --noEmit	Type-check the project
 
 The project's existing scripts include database push, seed, reset, development, and production build workflows.
-
-🔄 Core Workflows
-
-Member Booking Workflow
-
-Member Login
-     │
-     ▼
-Browse Classes
-     │
-     ▼
-Select Class
-     │
-     ├── Seats Available ──► Book Class
-     │                           │
-     │                           ▼
-     │                     Deduct Credit
-     │
-     └── Class Full ───────► Join Waitlist
-
-Membership Workflow
-
-Member
-  │
-  ▼
-Browse Membership Plans
-  │
-  ▼
-Purchase Membership
-  │
-  ▼
-Membership Activated
-  │
-  ▼
-Receive/Use Class Credits
-  │
-  ▼
-Book Fitness Classes
-
-Corporate Credit Workflow
-
-Company
-   │
-   ▼
-Purchase Credit Pool
-   │
-   ▼
-Allocate Credits
-   │
-   ▼
-Employee Uses Credits
-   │
-   ▼
-Book Gym Class
-   │
-   ▼
-Corporate Pool Balance Updated
 
 🧮 Credit Management
 
